@@ -5,4 +5,4 @@ alias ..='cd ..'
 alias p='/usr/bin/env python3'
 alias myip="curl http://ipecho.net/plain; echo"
 alias vi="vim"
-alias dotConfig='/usr/bin/git --git-dir=/home/mw/.cfg/ --work-tree=/home/mw'
+alias dotConfig="/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME"
