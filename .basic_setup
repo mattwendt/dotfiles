@@ -1,0 +1,33 @@
+#!/bin/sh -
+
+envvar=
+EXITCODE=0
+PROGRAM=$(basename $0)
+
+OLDIFS="$IFS"
+IFS=$(printf " \n\t")
+export IFS
+
+OLDPATH="$PATH"
+PATH=/bin:/usr/bin
+export PATH
+
+
+error() {
+    echo "$@" 1>&2
+    usage_and_exit 1
+}
+
+usage() {
+    echo "Usage: $PROGRAM"
+}
+
+usage_and_exit() {
+    usage
+    exit $1
+}
+
+warning() {
+    echo "$@" 1>&2
+    EXITCODE=$(($EXITCODE + 1))
+}
