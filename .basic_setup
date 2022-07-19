@@ -1,33 +1,133 @@
 #!/bin/sh -
 
-envvar=
 EXITCODE=0
-PROGRAM=$(basename $0)
+PROGRAM=$(basename "$0")
 
 OLDIFS="$IFS"
 IFS=$(printf " \n\t")
 export IFS
 
 OLDPATH="$PATH"
-PATH=/bin:/usr/bin
+PATH=/bin:/usr/bin:/usr/sbin
 export PATH
 
+EXECUTE_DIR=~/
+RED="\033[1;31m"
+NOCOLOR="\033[0m"
+GREEN="\033[1;32m"
 
 error() {
-    echo "$@" 1>&2
+    printf "Error: %s\n" "$@" 1>&2
     usage_and_exit 1
 }
 
 usage() {
-    echo "Usage: $PROGRAM"
+    cat << EOF
+Usage:
+    $PROGRAM [-v|--verbose]
+
+EOF
 }
 
 usage_and_exit() {
     usage
-    exit $1
+    exit "$1"
 }
 
 warning() {
-    echo "$@" 1>&2
+    printf "Warning: %s\n" "$@" 1>&2
     EXITCODE=$(($EXITCODE + 1))
 }
+
+getDotFiles() {
+    # Usage:
+    #       This function assumes that the alias for the dotConfig is Set
+
+    printf "%bChecking out Dotfiles from bare repo.%b\n" "${GREEN}" "${NOCOLOR}"
+    dotConfig checkout
+    dotConfig config --local status.showUntrackedFiles no
+}
+
+updateCurrentSystem() {
+
+    # Usage:
+    #       Install packages
+    # Returns 0 (success) if packages where installed without errors,
+    # 1 (failure) if an error accured.
+
+    printf "Step 1: %bConfigure packages%b\n" "${GREEN}" "${NOCOLOR}"
+    dpkg --configure -a
+    printf "\n"
+    if [ $? -ne 0 ]
+    then
+        return 1
+    fi
+
+    printf "Step 2: %bFix broken Installs%b\n" "${GREEN}" "${NOCOLOR}"
+    apt install -f
+    printf "\n"
+    if [ $? -ne 0 ]
+    then
+        return 1
+    fi
+
+    printf "Step 3: %bUpdate apt cache%b\n" "${GREEN}" "${NOCOLOR}"
+    apt update
+    printf "\n"
+    if [ $? -ne 0 ]
+    then
+        return 1
+    fi
+
+    printf "Step 4: %bUpgrade packages%b\n" "${GREEN}" "${NOCOLOR}"
+    apt dist-upgrade -y
+    printf "\n"
+    if [ $? -ne 0 ]
+    then
+        return 1
+    fi
+
+    printf "Step 5: %bRemove unused packages%b\n" "${GREEN}" "${NOCOLOR}"
+    apt autoremove -y
+    printf "\n"
+    if [ $? -ne 0 ]
+    then
+        return 1
+    fi
+
+    printf "Step 6: %bClean up%b\n" "${GREEN}" "${NOCOLOR}"
+    apt autoclean
+    printf "\n"
+    if [ $? -ne 0 ]
+    then
+        return 1
+    fi
+
+    return 0
+}
+
+
+if [ $(/usr/bin/id -u) -ne 0 ]
+then
+      error "Script must be run as root."
+fi
+
+
+cd $EXECUTE_DIR || error "Script is not able to acces users home directory."
+
+printf "UPDATING SYSTEM\n\n"
+ret=updateCurrentSystem
+if [ $ret -eq 0 ]
+then
+    printf "\nDONE UPDATING\n\n"
+else
+    error "The update process was not successfull\n"
+fi
+
+#getDotFiles
+
+
+
+test $EXITCODE -gt 125 && EXITCODE=125
+
+exit $EXITCODE
