@@ -107,7 +107,7 @@ updateCurrentSystem() {
 }
 
 
-if [ $(/usr/bin/id -u) -ne 0 ]
+if [ "$(/usr/bin/id -u)" -ne 0 ]
 then
       error "Script must be run as root."
 fi
@@ -116,8 +116,7 @@ fi
 cd $EXECUTE_DIR || error "Script is not able to acces users home directory."
 
 printf "UPDATING SYSTEM\n\n"
-ret=updateCurrentSystem
-if [ $ret -eq 0 ]
+if updateCurrentSystem;
 then
     printf "\nDONE UPDATING\n\n"
 else
